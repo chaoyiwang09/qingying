@@ -6,13 +6,11 @@
 
 ## 打赏
 
-请扫下面的爱发电二维码，不要扫个人微信或支付宝收款码。
+<p align="center">
+  <img src="docs/afdian-qr.jpg" width="280" alt="爱发电：萝卜君">
+</p>
 
-个人收款码会让陌生人的钱一笔一笔直接进你的微信、支付宝，再进银行卡。笔数一多，银行和支付风控会把它当成异常收款，绑定的储蓄卡可能被冻结。爱发电是平台代收：别人付给爱发电，爱发电记到创作者余额里，你再从自己的余额提现。进卡的是你自己提现的那一笔，不是一串陌生人转账。
-
-爱发电大约收取 6%（含支付通道费），其余打到创作者余额，次月可提现。
-
-赞助页开通后，把爱发电主页右侧的分享二维码放到 `docs/afdian-qr.png`，并在这一节下面显示它。在那之前，不要把个人收款码提交到仓库里。
+请扫上面的爱发电二维码。这是爱发电赞助页，由平台代收。不要改用个人微信或支付宝收款码：陌生人的钱会一笔一笔直接进银行卡，笔数一多可能触发风控，绑定的储蓄卡会被冻结。爱发电把赞助记到创作者余额，你再自己提现。平台大约收取 6%（含支付通道费），其余次月可提现。
 
 ## 它能做什么
 
@@ -82,13 +80,11 @@ The PC stays on as the remote. The movie plays on the projector.
 
 ## Tips
 
-Scan the Afdian code below. Do not publish a personal WeChat or Alipay collection code.
+<p align="center">
+  <img src="docs/afdian-qr.jpg" width="280" alt="Afdian: 萝卜君">
+</p>
 
-A personal collection code sends each stranger’s payment straight into a wallet and then into a bank card. Enough of those transfers can trip bank and payment risk checks, and the linked debit card can be frozen. Afdian collects the money as a platform. Supporters pay Afdian, Afdian credits the creator balance, and the creator withdraws that balance. What reaches the bank is one withdrawal you initiated, not a stream of transfers from unknown people.
-
-Afdian keeps about 6% (including payment-channel fees). The rest is credited to the creator balance and can be withdrawn the following month.
-
-After the sponsor page exists, add the share QR from the Afdian profile as `docs/afdian-qr.png` and show it under this section. Until then, do not commit a personal collection code.
+Scan the Afdian code above. Afdian collects the sponsorship as a platform. Do not switch to a personal WeChat or Alipay collection code: those payments land directly on a bank card, and enough transfers from strangers can freeze the linked debit card. Afdian credits a creator balance, and you withdraw that balance yourself. The platform keeps about 6% (including payment-channel fees). The rest can be withdrawn the following month.
 
 ## What it does
 
