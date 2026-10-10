@@ -1,4 +1,4 @@
-"""清映：把视频投到同一局域网里的投影仪。"""
+"""清映：把视频投到同一局域网里的电视或投影仪。"""
 
 from __future__ import annotations
 
@@ -574,7 +574,7 @@ class MainWindow(QMainWindow):
         titles.setSpacing(2)
         title = QLabel("清映")
         title.setObjectName("title")
-        sub = QLabel("把电脑里的视频，按顺序投到投影仪")
+        sub = QLabel("把电脑里的视频，按顺序投到电视或投影仪")
         sub.setObjectName("quiet")
         titles.addWidget(title)
         titles.addWidget(sub)
@@ -617,7 +617,7 @@ class MainWindow(QMainWindow):
         box.setContentsMargins(16, 16, 16, 14)
         box.setSpacing(10)
         row = QHBoxLayout()
-        name = QLabel("投影仪")
+        name = QLabel("电视或投影仪")
         name.setObjectName("section")
         self.scan_btn = QPushButton("搜索中")
         self.scan_btn.setObjectName("small")
@@ -636,7 +636,7 @@ class MainWindow(QMainWindow):
         self.device_list.itemClicked.connect(self.on_device_clicked)
         box.addWidget(self.device_list, 1)
 
-        self.device_hint = QLabel("正在搜索同一网段里的投影仪…", self.device_list.viewport())
+        self.device_hint = QLabel("正在搜索同一网段里的电视或投影仪…", self.device_list.viewport())
         self.device_hint.setAlignment(Qt.AlignCenter)
         self.device_hint.setWordWrap(True)
         self.device_hint.setObjectName("hint")
@@ -645,7 +645,7 @@ class MainWindow(QMainWindow):
 
         manual = QHBoxLayout()
         self.ip_edit = QLineEdit()
-        self.ip_edit.setPlaceholderText("手动输入投影仪 IP")
+        self.ip_edit.setPlaceholderText("手动输入电视或投影仪 IP")
         self.ip_edit.returnPressed.connect(self.connect_manual)
         connect = QPushButton("连接")
         connect.setObjectName("small")
@@ -653,7 +653,7 @@ class MainWindow(QMainWindow):
         manual.addWidget(self.ip_edit, 1)
         manual.addWidget(connect)
         box.addLayout(manual)
-        note = QLabel("有线和 Wi‑Fi 需要在同一台路由器下。搜不到时，请在投影仪里打开投屏。")
+        note = QLabel("有线和 Wi‑Fi 需要在同一台路由器下。搜不到时，请在电视或投影仪里打开投屏。")
         note.setObjectName("quiet")
         note.setWordWrap(True)
         box.addWidget(note)
@@ -786,7 +786,7 @@ class MainWindow(QMainWindow):
             seg_row.addWidget(button)
             button.clicked.connect(lambda checked, name=key: self.on_quality(name))
         quality_row.addWidget(seg)
-        quality_hint = QLabel("转码后投影仪更好解，播放更顺")
+        quality_hint = QLabel("转码后电视和投影仪更好解，播放更顺")
         quality_hint.setObjectName("quiet")
         quality_row.addWidget(quality_hint)
         quality_row.addSpacing(16)
@@ -1058,7 +1058,7 @@ class MainWindow(QMainWindow):
     def start_scan(self) -> None:
         self.scan_btn.setEnabled(False)
         self.scan_btn.setText("搜索中")
-        self.device_hint.setText("正在搜索同一网段里的投影仪…")
+        self.device_hint.setText("正在搜索同一网段里的电视或投影仪…")
         self.device_hint.setVisible(self.device_list.count() == 0)
         self.engine.command("scan")
 
@@ -1078,7 +1078,7 @@ class MainWindow(QMainWindow):
             return
         if not self.device_items:
             nets = "、".join(iface.label for iface in (self.engine.ifaces or self.ifaces)) or "局域网"
-            self.device_hint.setText(f"在 {nets} 里没有找到投影仪。\n请确认它已开机，或在下面填入 IP。")
+            self.device_hint.setText(f"在 {nets} 里没有找到电视或投影仪。\n请确认它已开机，或在下面填入 IP。")
             self.device_hint.setVisible(True)
             return
         self.device_hint.setVisible(False)

@@ -124,7 +124,7 @@ class Engine(threading.Thread):
         return self.playlist[index]
 
     def cmd_scan(self) -> None:
-        self.bridge.status.emit("正在搜索投影仪…")
+        self.bridge.status.emit("正在搜索电视或投影仪…")
         self.ifaces = local_interfaces() or self.ifaces
         if not self.ifaces:
             self.bridge.devices.emit([])

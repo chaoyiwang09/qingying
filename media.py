@@ -32,10 +32,13 @@ def bundle_dir() -> Path:
 
 
 def tool_path(name: str) -> str | None:
-    """优先用放在程序旁边的 ffmpeg，换电脑时不用再单独安装。"""
-    for candidate in (runtime_dir() / f"{name}.exe", runtime_dir() / name):
-        if candidate.is_file():
-            return str(candidate)
+    """优先用随程序打包的 ffmpeg，其次用放在程序旁边的，最后才找系统里的。"""
+    names = (f"{name}.exe", name)
+    for root in (runtime_dir(), bundle_dir()):
+        for filename in names:
+            candidate = root / filename
+            if candidate.is_file():
+                return str(candidate)
     return shutil.which(name)
 
 
