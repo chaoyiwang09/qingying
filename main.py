@@ -64,8 +64,13 @@ APP_DIR = runtime_dir()
 
 
 def user_settings_path() -> Path:
-    root = os.environ.get("LOCALAPPDATA")
-    base = Path(root) if root else Path.home() / "AppData" / "Local"
+    if sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    elif os.name == "nt":
+        root = os.environ.get("LOCALAPPDATA")
+        base = Path(root) if root else Path.home() / "AppData" / "Local"
+    else:
+        base = Path.home() / ".config"
     folder = base / "清映"
     folder.mkdir(parents=True, exist_ok=True)
     return folder / "settings.json"

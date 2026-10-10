@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import os
 import re
 import socket
 import struct
@@ -16,6 +17,12 @@ from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
 
 CREATE_NO_WINDOW = 0x08000000
+
+
+def _hidden() -> dict:
+    if os.name == "nt":
+        return {"creationflags": CREATE_NO_WINDOW}
+    return {}
 SEARCH_TARGETS = (
     "urn:schemas-upnp-org:device:MediaRenderer:1",
     "urn:schemas-upnp-org:device:MediaRenderer:2",
@@ -91,10 +98,50 @@ def urlopen_direct(req: urllib.request.Request, timeout: float = 3):
     return _direct_opener().open(req, timeout=timeout)
 
 
+def _interfaces_posix() -> list[NetIf]:
+    """macOS 上用默认路由和 ifconfig 找真正上网的那张网卡。"""
+    preferred = ""
+    try:
+        route = subprocess.check_output(["route", "-n", "get", "default"], text=True, timeout=4)
+    except Exception:
+        route = ""
+    for line in route.splitlines():
+        if "interface:" in line:
+            preferred = line.split(":", 1)[1].strip()
+            break
+    try:
+        raw = subprocess.check_output(["ifconfig"], text=True, timeout=4)
+    except Exception:
+        return []
+    found: list[NetIf] = []
+    for block in re.split(r"\n(?=\S)", raw):
+        lines = block.splitlines()
+        if not lines or ":" not in lines[0]:
+            continue
+        name = lines[0].split(":", 1)[0]
+        if preferred and name != preferred:
+            continue
+        if any(name.startswith(prefix) for prefix in ("lo", "utun", "awdl", "llw", "bridge", "vmnet", "gif", "stf")):
+            continue
+        match = re.search(r"\binet (\d+\.\d+\.\d+\.\d+) netmask (0x[0-9a-fA-F]+)", block)
+        if not match:
+            continue
+        ip = match.group(1)
+        if ip.startswith("127.") or ip.startswith("198.18.") or ip.startswith("198.19."):
+            continue
+        mask = socket.inet_ntoa(struct.pack("!I", int(match.group(2), 16)))
+        found.append(NetIf(name, ip, mask))
+        if preferred:
+            break
+    return found
+
+
 def local_interfaces() -> list[NetIf]:
     """读取真正接在路由器上的 IPv4 网卡，跳过代理和虚拟网卡。"""
+    if os.name != "nt":
+        return _interfaces_posix()
     try:
-        raw = subprocess.check_output(["ipconfig"], creationflags=CREATE_NO_WINDOW)
+        raw = subprocess.check_output(["ipconfig"], **_hidden())
     except Exception:
         return []
     text = raw.decode("gbk", errors="replace")

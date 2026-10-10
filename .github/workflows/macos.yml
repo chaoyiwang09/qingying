@@ -1,0 +1,77 @@
+name: macOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/macos.yml"
+      - "scripts/bundle_ffmpeg_mac.py"
+      - "main.py"
+      - "media.py"
+      - "engine.py"
+      - "dlna.py"
+      - "requirements.txt"
+      - "cache/black.mp4"
+      - "cache/black.jpg"
+      - "qingying.ico"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            asset: Qingying-macos-apple.zip
+          - runner: macos-15-intel
+            asset: Qingying-macos-intel.zip
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: |
+          python -m pip install -r requirements.txt pyinstaller
+          brew install ffmpeg
+
+      - name: Make icon
+        run: |
+          mkdir -p icon.iconset
+          sips -s format png qingying.ico --out icon.iconset/icon_512x512.png
+          sips -z 512 512 icon.iconset/icon_512x512.png --out icon.iconset/icon_512x512.png
+          cp icon.iconset/icon_512x512.png icon.iconset/icon_256x256.png
+          iconutil -c icns icon.iconset -o qingying.icns
+
+      - name: Collect ffmpeg
+        run: python scripts/bundle_ffmpeg_mac.py
+
+      - name: Build app
+        run: |
+          args=()
+          if [ -f qingying.icns ]; then
+            args+=(--icon qingying.icns)
+          fi
+          for file in dist/ffmpeg-bin/*; do
+            args+=(--add-binary "$file:.")
+          done
+          python -m PyInstaller --noconfirm --windowed --name "清映" \
+            --osx-bundle-identifier app.qingying.cast \
+            --add-data "cache/black.mp4:cache" \
+            --add-data "cache/black.jpg:cache" \
+            "${args[@]}" \
+            main.py
+          codesign --force --deep --sign - "dist/清映.app"
+          ditto -c -k --keepParent "dist/清映.app" "${{ matrix.asset }}"
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload v1.0.0 "${{ matrix.asset }}" --clobber

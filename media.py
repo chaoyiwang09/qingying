@@ -18,6 +18,12 @@ from pathlib import Path
 CREATE_NO_WINDOW = 0x08000000
 
 
+def _hidden() -> dict:
+    if os.name == "nt":
+        return {"creationflags": CREATE_NO_WINDOW}
+    return {}
+
+
 def runtime_dir() -> Path:
     """开发时用源码目录，打包后用 exe 所在目录，这样设置和缓存能留下来。"""
     if getattr(sys, "frozen", False):
@@ -316,18 +322,36 @@ def escape_filter_path(path: str) -> str:
     return text
 
 
+def _font_face() -> str:
+    folder = CACHE_DIR / "fonts"
+    if any(folder.glob("PingFang*")) or any(folder.glob("STHeiti*")) or any(folder.glob("Hiragino*")):
+        return "PingFang SC"
+    return "Microsoft YaHei"
+
+
 def font_dir() -> Path | None:
     """只放一款中文字体。把整个 Windows 字体目录交给字幕滤镜时，加载会卡住。"""
     folder = CACHE_DIR / "fonts"
     folder.mkdir(parents=True, exist_ok=True)
     if any(folder.glob("*.tt[cf]")) or any(folder.glob("*.otf")):
         return folder
-    windir = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts"
-    for name in ("msyh.ttc", "msyh.ttf", "simhei.ttf", "simsun.ttc"):
-        source = windir / name
+    sources: list[Path] = []
+    if sys.platform == "darwin":
+        roots = (
+            Path("/System/Library/Fonts"),
+            Path("/System/Library/Fonts/Supplemental"),
+            Path("/Library/Fonts"),
+            Path.home() / "Library" / "Fonts",
+        )
+        names = ("PingFang.ttc", "STHeiti Medium.ttc", "Songti.ttc", "Hiragino Sans GB.ttc")
+        sources = [root / name for root in roots for name in names]
+    else:
+        windir = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts"
+        sources = [windir / name for name in ("msyh.ttc", "msyh.ttf", "simhei.ttf", "simsun.ttc")]
+    for source in sources:
         if not source.is_file():
             continue
-        target = folder / name
+        target = folder / source.name
         try:
             shutil.copyfile(source, target)
         except OSError:
@@ -347,7 +371,7 @@ def subtitle_filter(video: str, height: str | None, prefer: str = "中文") -> s
     if fonts is not None:
         body += f":fontsdir='{escape_filter_path(fonts)}'"
     body += (
-        f":force_style='FontName=Microsoft YaHei,FontSize={size},"
+        f":force_style='FontName={_font_face()},FontSize={size},"
         "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=0,MarginV=18'"
     )
     return body
@@ -369,7 +393,7 @@ def probe_duration(path: str) -> float | None:
                 "default=noprint_wrappers=1:nokey=1",
                 path,
             ],
-            creationflags=CREATE_NO_WINDOW,
+            **_hidden(),
             stderr=subprocess.DEVNULL,
             timeout=15,
         )
@@ -409,7 +433,7 @@ def ensure_black(cache: Path) -> tuple[Path | None, Path | None]:
                 "1",
                 str(jpg),
             ],
-            creationflags=CREATE_NO_WINDOW,
+            **_hidden(),
             check=False,
         )
     if not mp4.exists() or mp4.stat().st_size < 10000:
@@ -443,7 +467,7 @@ def ensure_black(cache: Path) -> tuple[Path | None, Path | None]:
                 "+faststart",
                 str(mp4),
             ],
-            creationflags=CREATE_NO_WINDOW,
+            **_hidden(),
             check=False,
         )
     return (mp4 if mp4.exists() else None), (jpg if jpg.exists() else None)
@@ -482,7 +506,7 @@ def choose_encoder() -> str:
                     "-",
                 ],
                 capture_output=True,
-                creationflags=CREATE_NO_WINDOW,
+                **_hidden(),
                 timeout=20,
             )
         except (OSError, subprocess.TimeoutExpired):
@@ -593,11 +617,29 @@ THUMB_STEP = 8
 
 def local_cache_dir() -> Path:
     """缓存在系统盘，外接硬盘拔掉时这里还在。"""
-    root = os.environ.get("LOCALAPPDATA")
-    base = Path(root) if root else Path.home() / "AppData" / "Local"
+    if sys.platform == "darwin":
+        base = Path.home() / "Library" / "Caches"
+    elif os.name == "nt":
+        root = os.environ.get("LOCALAPPDATA")
+        base = Path(root) if root else Path.home() / "AppData" / "Local"
+    else:
+        base = Path.home() / ".cache"
     folder = base / "清映" / "cache"
     folder.mkdir(parents=True, exist_ok=True)
     return folder
+
+
+def _same_volume(path: str, other: str) -> bool:
+    if os.name == "nt":
+        return Path(path).anchor.lower() == Path(other).anchor.lower()
+
+    def volume(item: str) -> str:
+        parts = Path(item).parts
+        if len(parts) >= 3 and parts[1] == "Volumes":
+            return parts[2]
+        return ""
+
+    return volume(path) == volume(other)
 
 
 def drive_roots() -> list[str]:
@@ -639,11 +681,18 @@ def locate_file(path: str, size: int = 0) -> str | None:
     candidates = [path]
     anchor = Path(path).anchor
     tail = path[len(anchor):] if anchor else ""
-    if tail:
+    if tail and os.name == "nt":
         for root in drive_roots():
             if anchor and root.upper() == anchor.upper():
                 continue
             candidates.append(root + tail)
+    parts = Path(path).parts
+    if len(parts) >= 4 and parts[1] == "Volumes":
+        rest = Path(*parts[3:])
+        volumes = Path("/Volumes")
+        if volumes.is_dir():
+            for volume in volumes.iterdir():
+                candidates.append(str(volume / rest))
     for candidate in candidates:
         if not drive_listed(candidate):
             continue
@@ -708,7 +757,7 @@ class FileMirror:
         elif not path_ok(path):
             return "missing"
         cache_root = local_cache_dir()
-        if Path(path).anchor.lower() == cache_root.anchor.lower():
+        if _same_volume(path, str(cache_root)):
             return "local"
         if self.ready(path, size):
             return "ready"
@@ -986,7 +1035,7 @@ class ThumbHub:
                 str(temp),
             ],
             capture_output=True,
-            creationflags=CREATE_NO_WINDOW,
+            **_hidden(),
         )
         if result.returncode != 0 or not temp.is_file() or temp.stat().st_size <= 0:
             temp.unlink(missing_ok=True)
@@ -1306,7 +1355,7 @@ class Handler(BaseHTTPRequestHandler):
                 command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
-                creationflags=CREATE_NO_WINDOW,
+                **_hidden(),
             )
         except OSError:
             self.library.detach_stream(generation, False)
@@ -1448,7 +1497,7 @@ def ensure_firewall() -> None:
     port_probe = subprocess.run(
         ["netsh", "advfirewall", "firewall", "show", "rule", "name=清映投屏端口"],
         capture_output=True,
-        creationflags=CREATE_NO_WINDOW,
+        **_hidden(),
     )
     if port_probe.returncode != 0:
         commands.append(
@@ -1471,7 +1520,7 @@ def ensure_firewall() -> None:
         program_probe = subprocess.run(
             ["netsh", "advfirewall", "firewall", "show", "rule", "name=清映投屏"],
             capture_output=True,
-            creationflags=CREATE_NO_WINDOW,
+            **_hidden(),
         )
         if program_probe.returncode != 0:
             commands.append(
@@ -1490,7 +1539,7 @@ def ensure_firewall() -> None:
                 ]
             )
     for command in commands:
-        subprocess.run(command, capture_output=True, creationflags=CREATE_NO_WINDOW)
+        subprocess.run(command, capture_output=True, **_hidden())
 
 
 def serve(library: Library, port: int = 18765) -> tuple[ThreadingHTTPServer, int]:

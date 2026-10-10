@@ -6,9 +6,15 @@ qingying，一款免费的投屏工具。
 
 ## 下载
 
-[下载 Windows 发布版](https://github.com/chaoyiwang09/qingying/releases/latest/download/Qingying-windows.zip)
+[下载 Windows 版](https://github.com/chaoyiwang09/qingying/releases/latest/download/Qingying-windows.zip)
 
-解压后双击 `清映.exe` 就能用。ffmpeg 已经封装在里面，不用另外安装。
+[下载 macOS 版（Apple 芯片）](https://github.com/chaoyiwang09/qingying/releases/latest/download/Qingying-macos-apple.zip)
+
+[下载 macOS 版（Intel 芯片）](https://github.com/chaoyiwang09/qingying/releases/latest/download/Qingying-macos-intel.zip)
+
+Windows 解压后双击 `清映.exe`。Mac 解压后打开 `清映.app`。不确定芯片的话，点左上角苹果菜单，按住 Option 再点「系统信息」，处理器一栏写 Apple 就下 Apple 芯片那份，写 Intel 就下 Intel 那份。ffmpeg 已经封装在里面，不用另外安装。
+
+从 GitHub 下载的 Mac 版第一次打开，系统可能会拦截。在访达里按住 Control 点 `清映.app`，选「打开」，再确认一次。
 
 ## 界面
 
@@ -44,11 +50,11 @@ qingying，一款免费的投屏工具。
 2. 在电视或投影仪里打开投屏（DLNA / 无线投屏）。
 3. 播放期间不要让电脑睡眠。清映播放时会尽量阻止系统休眠。
 
-程序会尝试放行本机端口 `18765–18784`，让电视或投影仪连回电脑。如果搜到了设备但一直投不出去，用管理员身份运行一次。
+程序在 Windows 上会尝试放行本机端口 `18765–18784`，让电视或投影仪连回电脑。如果搜到了设备但一直投不出去，用管理员身份运行一次。Mac 第一次投屏时，如果系统询问是否允许接受传入连接，选允许。
 
 ## 从源码运行
 
-需要 Windows 和 Python 3.10 或更新版本。发布版不需要这一步。
+需要 Python 3.10 或更新版本。发布版不需要这一步。Windows 和 macOS 都可以从源码运行。
 
 ```bat
 py -3 -m pip install -r requirements.txt
@@ -67,9 +73,15 @@ Cast videos from a Windows PC, in playlist order, to a TV, projector, or other D
 
 ## Download
 
-[Download the Windows release](https://github.com/chaoyiwang09/qingying/releases/latest/download/Qingying-windows.zip)
+[Download for Windows](https://github.com/chaoyiwang09/qingying/releases/latest/download/Qingying-windows.zip)
 
-Unzip it and open `清映.exe`. ffmpeg is already packed in, so there is nothing else to install.
+[Download for Mac (Apple silicon)](https://github.com/chaoyiwang09/qingying/releases/latest/download/Qingying-macos-apple.zip)
+
+[Download for Mac (Intel)](https://github.com/chaoyiwang09/qingying/releases/latest/download/Qingying-macos-intel.zip)
+
+On Windows, unzip and open `清映.exe`. On a Mac, unzip and open `清映.app`. Apple silicon is the chip in Macs sold since late 2020; older Macs use Intel. ffmpeg is already packed in.
+
+The first time macOS may refuse a download from GitHub. Control-click `清映.app`, choose Open, and confirm.
 
 ## Interface
 
@@ -103,13 +115,13 @@ Subtitles: srt, ass, ssa, vtt.
 
 1. Put the PC and the TV or projector on the same router. Ethernet and Wi-Fi must be the same network, not a guest network beside the main LAN.
 2. Turn on casting on the TV or projector (DLNA / wireless display).
-3. Leave the PC awake while a video is playing. Qingying asks Windows not to sleep during playback.
+3. Leave the computer awake while a video is playing. Qingying asks the system not to sleep during playback.
 
-Qingying tries to allow local TCP ports `18765–18784` so the TV or projector can connect back. If a device is found but playback never starts, run it once as administrator.
+On Windows, Qingying tries to allow local TCP ports `18765–18784` so the TV or projector can connect back. If a device is found but playback never starts, run it once as administrator. On a Mac, allow incoming connections if macOS asks.
 
 ## Run from source
 
-Windows, with Python 3.10 or newer. The release download does not need this.
+Python 3.10 or newer, on Windows or macOS. The release download does not need this.
 
 ```bat
 py -3 -m pip install -r requirements.txt

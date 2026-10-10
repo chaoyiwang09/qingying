@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 import queue
+import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -28,13 +30,26 @@ ES_CONTINUOUS = 0x80000000
 ES_SYSTEM_REQUIRED = 0x00000001
 
 
-def keep_awake(on: bool) -> None:
-    if os.name != "nt":
-        return
-    import ctypes
+_caffeinate: subprocess.Popen | None = None
 
-    flag = ES_CONTINUOUS | ES_SYSTEM_REQUIRED if on else ES_CONTINUOUS
-    ctypes.windll.kernel32.SetThreadExecutionState(flag)
+
+def keep_awake(on: bool) -> None:
+    global _caffeinate
+    if os.name == "nt":
+        import ctypes
+
+        flag = ES_CONTINUOUS | ES_SYSTEM_REQUIRED if on else ES_CONTINUOUS
+        ctypes.windll.kernel32.SetThreadExecutionState(flag)
+        return
+    if sys.platform != "darwin":
+        return
+    if on:
+        if _caffeinate is None or _caffeinate.poll() is not None:
+            _caffeinate = subprocess.Popen(["caffeinate", "-ims"])
+        return
+    if _caffeinate is not None and _caffeinate.poll() is None:
+        _caffeinate.terminate()
+    _caffeinate = None
 
 
 class Bridge(QObject):
