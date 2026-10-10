@@ -53,6 +53,12 @@ jobs:
       - name: Collect ffmpeg
         run: python scripts/bundle_ffmpeg_mac.py
 
+      - name: Make black frames
+        run: |
+          mkdir -p cache
+          ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=black:s=1280x720 -frames:v 1 cache/black.jpg
+          ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=c=black:s=1280x720:r=8 -t 12 -c:v libx264 -pix_fmt yuv420p -preset veryfast -tune stillimage -an -movflags +faststart cache/black.mp4
+
       - name: Build app
         run: |
           args=()
